@@ -1,6 +1,8 @@
 (ns airy-video.core
   (:use [seesaw.core]
+        [seesaw.dev]
         [seesaw.chooser :only [choose-file]])
+  (:require [me.raynes.fs :as fs])
   (:gen-class))
 
 (def prog-name "Airy Video")
@@ -12,10 +14,21 @@
     :id :select-file-btn
     :text "Select file"))
 
+(def selected-file-name
+  (label
+    :id :selected-file-name
+    :minimum-size [200 :by 40]
+    :text " "
+    :user-data []))
+
 (listen select-file-btn
         :action (fn [e]
-                  (choose-file)
-                  (config! select-file-btn :enabled? false)))
+                  (when-let [f (choose-file)]
+                    (let [file-name (fs/absolute-path f)]
+                      (config! selected-file-name
+                               :user-data {:file (fs/normalized-path f)
+                                           :file-name file-name}
+                               :text file-name)))))
 
 (def formats-lbl
   (label
@@ -32,6 +45,7 @@
   (vertical-panel
     :id :left-panel
     :items [select-file-btn
+           selected-file-name
             formats-lbl
             formats-cmb
             :fill-v]))
